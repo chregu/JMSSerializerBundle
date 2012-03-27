@@ -31,6 +31,7 @@ class Serializer implements SerializerInterface
     private $serializationVisitors;
     private $deserializationVisitors;
     private $exclusionStrategy;
+    private $depth = null;
 
     public function __construct(MetadataFactoryInterface $factory, array $serializationVisitors = array(), array $deserializationVisitors = array())
     {
@@ -66,11 +67,16 @@ class Serializer implements SerializerInterface
         $this->exclusionStrategy = new GroupsExclusionStrategy($groups);
     }
 
+    public function setDepth($depth) 
+    {
+        $this->depth = $depth;
+    }
+
     public function serialize($data, $format)
     {
         $visitor = $this->getSerializationVisitor($format);
-        $visitor->setNavigator($navigator = new GraphNavigator(GraphNavigator::DIRECTION_SERIALIZATION, $this->factory, $this->exclusionStrategy));
-        $navigator->accept($visitor->prepare($data), null, $visitor);
+        $visitor->setNavigator($navigator = new GraphNavigator(GraphNavigator::DIRECTION_SERIALIZATION, $this->factory, $this->exclusionStrategy, $this->depth));
+        $navigator->accept($visitor->prepare($data), null, $visitor, 0);
 
         return $visitor->getResult();
     }
@@ -79,7 +85,7 @@ class Serializer implements SerializerInterface
     {
         $visitor = $this->getDeserializationVisitor($format);
         $visitor->setNavigator($navigator = new GraphNavigator(GraphNavigator::DIRECTION_DESERIALIZATION, $this->factory, $this->exclusionStrategy));
-        $navigator->accept($visitor->prepare($data), $type, $visitor);
+        $navigator->accept($visitor->prepare($data), $type, $visitor, 0);
 
         return $visitor->getResult();
     }
